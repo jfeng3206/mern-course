@@ -1,19 +1,22 @@
 import { FormRow, SubmitBtn } from "../components";
 import Wrapper from "../assets/wrappers/DashboardFormPage";
 import { useOutletContext } from "react-router-dom";
-import { useNavigation, Form } from "react-router-dom";
+import { useNavigation, Form, redirect } from "react-router-dom";
 import customFetch from "../utils/customFetch";
 
-export const action = async ({ request }) => {
+export const action = (queryClient) =>async ({ request }) => {
   const formData = await request.formData();
   const file = formData.get('avatar');
   const errors = { msg: '' };
   if(file&&file.size>50000){
     errors.msg ='img size too larger';
-    // return errors;
+    return null;
   }
   try {
-    await customFetch.patch('/users/update-user', formData);
+    await customFetch.patch("/users/update-user", formData);
+    queryClient.invalidateQueries(["user"]);
+    console.log("Profile updated successfully");
+    return redirect("/dashboard");
   } catch (error) {
      errors.msg = error?.response?.data?.msg ;
   }

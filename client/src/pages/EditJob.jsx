@@ -4,28 +4,45 @@ import { useLoaderData } from "react-router-dom";
 import { JOB_STATUS, JOB_TYPE } from "../../../utils/constants";
 import { Form, useNavigation, redirect } from "react-router-dom";
 import customFetch from "../utils/customFetch";
+import { useQuery } from "@tanstack/react-query";
 
-export const loader = async ({params}) => {
+const singleJobQuery = (id) => {
+  return {
+    queryKey: ["job", id],
+    queryFn: async () => {
+      const { data } = await customFetch.get(`/jobs/${id}`);
+      return data;
+    },
+  };
+};
+
+export const loader = (queryClient) => async ({params}) => {
   try {
-    const { data } = await customFetch.get(`/jobs/${params.id}`);
-    return data;
+    await queryClient.ensureQueryData(singleJobQuery(params.id));
   } catch (error) {
     return redirect("/dashboard/all-jobs");
   }
 };
-export const action = async ({ request, params }) => {
+export const action = (queryClient) =>async ({ request, params }) => {
   const formData = await request.formData();
   const data = Object.fromEntries(formData);
   try {
     await customFetch.patch(`/jobs/${params.id}`, data);
-    return redirect("/dashboard/all-jobs");
+      queryClient.invalidateQueries(["jobs"]);
+
+      console.log("Job edited successfully");
+      return redirect("/dashboard/all-jobs");
   } catch (error) {
     return error;
   }
 };
 
 const EditJob = () => {
-  const {job} = useLoaderData();
+  const id = useLoaderData();
+
+  const {
+    data: { job },
+  } = useQuery(singleJobQuery(id));
   return (
   // <h1>EditJob</h1>
     <Wrapper>

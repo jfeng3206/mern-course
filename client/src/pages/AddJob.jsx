@@ -5,12 +5,14 @@ import { JOB_STATUS, JOB_TYPE } from '../../../utils/constants';
 import { Form, redirect } from 'react-router-dom';
 import customFetch from '../utils/customFetch';
 
-export const action = async ({ request }) => {
+export const action = (queryClient) =>async ({ request }) => {
   const formData = await request.formData();
   const data = Object.fromEntries(formData);
   const errors = { msg: '' };
   try {
     await customFetch.post('/jobs', data);
+    queryClient.invalidateQueries(["jobs"]);
+    console.log("Job added successfully ");
     return redirect('all-jobs');
   } catch (error) {
      errors.msg = error?.response?.data?.msg ;
